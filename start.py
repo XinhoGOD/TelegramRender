@@ -1,30 +1,12 @@
 #!/usr/bin/env python3
 """
-Script de inicio robusto para Railway
+Script de inicio robusto para Railway con Docker
 """
 
 import os
 import sys
 import subprocess
 import time
-
-def install_dependencies():
-    """Instala las dependencias"""
-    print("📦 Instalando dependencias...")
-    try:
-        # Intentar con python -m pip primero
-        subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
-        print("✅ Dependencias instaladas")
-        return True
-    except subprocess.CalledProcessError:
-        try:
-            # Intentar con pip directamente
-            subprocess.check_call(["pip", "install", "-r", "requirements.txt"])
-            print("✅ Dependencias instaladas")
-            return True
-        except subprocess.CalledProcessError as e:
-            print(f"❌ Error instalando dependencias: {e}")
-            return False
 
 def check_environment():
     """Verifica las variables de entorno"""
@@ -49,16 +31,11 @@ def check_environment():
 
 def main():
     """Función principal"""
-    print("🚂 Iniciando UserBot en Railway...")
+    print("🚂 Iniciando UserBot en Railway (Docker)...")
     print("=" * 50)
     
     # Verificar Python
     print(f"🐍 Python: {sys.version}")
-    
-    # Instalar dependencias
-    if not install_dependencies():
-        print("❌ Error en la instalación")
-        sys.exit(1)
     
     # Verificar entorno
     if not check_environment():
