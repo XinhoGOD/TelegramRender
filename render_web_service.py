@@ -18,6 +18,7 @@ app = Flask(__name__)
 # Variables globales para el userbot
 userbot_thread = None
 userbot_running = False
+connection_status = "Desconectado"
 
 # Leer sesión string desde variables de entorno
 SESSION_STRING = os.getenv('SESSION_STRING')
@@ -26,10 +27,14 @@ class RenderUserBot:
     def __init__(self):
         self.client = None
         self.running = True
+        self.connection_attempts = 0
         
     async def connect_telegram(self):
         """Conecta a Telegram"""
-        print("📡 Conectando a Telegram...")
+        global connection_status
+        self.connection_attempts += 1
+        print(f"📡 Intento {self.connection_attempts}: Conectando a Telegram...")
+        connection_status = "Conectando..."
         
         try:
             if SESSION_STRING:
@@ -37,19 +42,25 @@ class RenderUserBot:
                 self.client = TelegramClient(StringSession(SESSION_STRING), API_ID, API_HASH)
             else:
                 print("⚠️ No hay sesión string configurada")
+                connection_status = "Error: No hay sesión string"
                 return False
             
             await self.client.connect()
             
             if await self.client.is_user_authorized():
-                print("✅ Sesión autorizada")
+                me = await self.client.get_me()
+                print(f"✅ Sesión autorizada")
+                print(f"👤 Conectado como: {me.first_name} ({me.phone})")
+                connection_status = f"Conectado como {me.first_name}"
                 return True
             else:
                 print("❌ Sesión no autorizada")
+                connection_status = "Error: Sesión no autorizada"
                 return False
                     
         except Exception as e:
             print(f"❌ Error de conexión: {e}")
+            connection_status = f"Error: {str(e)}"
             return False
     
     async def run_userbot(self):
@@ -72,12 +83,9 @@ class RenderUserBot:
                 # Conectar a Telegram
                 if not await self.connect_telegram():
                     print("❌ No se pudo conectar a Telegram")
+                    print("💡 Esperando 60 segundos antes de reintentar...")
                     await asyncio.sleep(60)
                     continue
-                
-                # Obtener información del usuario
-                me = await self.client.get_me()
-                print(f"✅ Conectado como: {me.first_name} ({me.phone})")
                 
                 # Ejecutar userbot
                 print("🚀 Iniciando UserBot...")
@@ -120,6 +128,7 @@ def home():
         "status": "online",
         "service": "Telegram UserBot",
         "userbot_running": userbot_running,
+        "connection_status": connection_status,
         "message": "UserBot está funcionando en segundo plano"
     })
 
@@ -128,7 +137,9 @@ def health():
     """Endpoint de health check para Render"""
     return jsonify({
         "status": "healthy",
-        "timestamp": time.time()
+        "timestamp": time.time(),
+        "userbot_running": userbot_running,
+        "connection_status": connection_status
     })
 
 @app.route('/status')
@@ -136,8 +147,27 @@ def status():
     """Endpoint para verificar el estado del userbot"""
     return jsonify({
         "userbot_running": userbot_running,
+        "connection_status": connection_status,
         "session_configured": bool(SESSION_STRING),
-        "variables_configured": bool(API_ID and API_HASH and PHONE_NUMBER)
+        "variables_configured": bool(API_ID and API_HASH and PHONE_NUMBER),
+        "api_id_configured": bool(API_ID),
+        "api_hash_configured": bool(API_HASH),
+        "phone_configured": bool(PHONE_NUMBER),
+        "session_string_configured": bool(SESSION_STRING)
+    })
+
+@app.route('/debug')
+def debug():
+    """Endpoint para diagnóstico detallado"""
+    return jsonify({
+        "userbot_running": userbot_running,
+        "connection_status": connection_status,
+        "session_configured": bool(SESSION_STRING),
+        "variables_configured": bool(API_ID and API_HASH and PHONE_NUMBER),
+        "api_id": API_ID[:10] + "..." if API_ID else None,
+        "api_hash": API_HASH[:10] + "..." if API_HASH else None,
+        "phone_number": PHONE_NUMBER,
+        "session_string_length": len(SESSION_STRING) if SESSION_STRING else 0
     })
 
 @app.route('/start')
@@ -154,6 +184,15 @@ def stop_bot():
     return jsonify({"message": "UserBot detenido"})
 
 if __name__ == '__main__':
+    # Mostrar información de diagnóstico al inicio
+    print("🔍 DIAGNÓSTICO INICIAL")
+    print("=" * 50)
+    print(f"API_ID: {'✅ Configurado' if API_ID else '❌ Faltante'}")
+    print(f"API_HASH: {'✅ Configurado' if API_HASH else '❌ Faltante'}")
+    print(f"PHONE_NUMBER: {'✅ Configurado' if PHONE_NUMBER else '❌ Faltante'}")
+    print(f"SESSION_STRING: {'✅ Configurado' if SESSION_STRING else '❌ Faltante'}")
+    print("=" * 50)
+    
     # Iniciar el userbot en segundo plano
     start_userbot()
     
