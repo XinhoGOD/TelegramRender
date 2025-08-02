@@ -7,8 +7,12 @@ Maneja la configuración automática del userbot en Railway
 import os
 import sys
 import asyncio
+import time
 from telethon import TelegramClient
-from config import API_ID, API_HASH, PHONE_NUMBER, SESSION_NAME
+from config import API_ID, API_HASH, PHONE_NUMBER
+
+# Usar un nombre de sesión único para Railway
+SESSION_NAME = 'railway_userbot_session'
 
 async def setup_railway():
     """Configura el userbot para Railway"""
@@ -27,12 +31,31 @@ async def setup_railway():
     print(f"✅ API_HASH: {API_HASH[:10]}...")
     print(f"✅ PHONE_NUMBER: {PHONE_NUMBER}")
     
-    # Crear cliente
+    # Crear cliente con nombre de sesión único
     client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
     
     try:
         print("📡 Conectando a Telegram...")
-        await client.start(phone=PHONE_NUMBER)
+        
+        # Intentar conectar con manejo de errores
+        try:
+            await client.start(phone=PHONE_NUMBER)
+        except Exception as e:
+            if "database is locked" in str(e):
+                print("⚠️ Error de base de datos bloqueada, intentando limpiar...")
+                # Eliminar archivo de sesión si existe
+                session_file = f"{SESSION_NAME}.session"
+                if os.path.exists(session_file):
+                    try:
+                        os.remove(session_file)
+                        print("✅ Archivo de sesión eliminado")
+                    except:
+                        pass
+                
+                # Intentar conectar nuevamente
+                await client.start(phone=PHONE_NUMBER)
+            else:
+                raise e
         
         if await client.is_user_authorized():
             print("✅ Sesión autorizada")

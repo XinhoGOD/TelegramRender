@@ -16,5 +16,5 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Exponer puerto (aunque no sea necesario para userbot)
 EXPOSE 8000
 
-# Comando de inicio
-CMD ["python", "start.py"] 
+# Comando de inicio - usar el worker
+CMD ["python", "railway_worker.py"] 
