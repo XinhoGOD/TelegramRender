@@ -12,12 +12,19 @@ def install_dependencies():
     """Instala las dependencias"""
     print("📦 Instalando dependencias...")
     try:
+        # Intentar con python -m pip primero
         subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
         print("✅ Dependencias instaladas")
         return True
-    except subprocess.CalledProcessError as e:
-        print(f"❌ Error instalando dependencias: {e}")
-        return False
+    except subprocess.CalledProcessError:
+        try:
+            # Intentar con pip directamente
+            subprocess.check_call(["pip", "install", "-r", "requirements.txt"])
+            print("✅ Dependencias instaladas")
+            return True
+        except subprocess.CalledProcessError as e:
+            print(f"❌ Error instalando dependencias: {e}")
+            return False
 
 def check_environment():
     """Verifica las variables de entorno"""
@@ -65,6 +72,7 @@ def main():
         userbot_main()
     except Exception as e:
         print(f"❌ Error iniciando UserBot: {e}")
+        print("💡 Verifica que las variables de entorno estén configuradas")
         sys.exit(1)
 
 if __name__ == "__main__":
