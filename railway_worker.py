@@ -37,8 +37,39 @@ class RailwayUserBot:
         
         try:
             self.client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
-            await self.client.start(phone=PHONE_NUMBER)
-            return True
+            
+            # Verificar si ya existe una sesión válida
+            if os.path.exists(f"{SESSION_NAME}.session"):
+                print("✅ Archivo de sesión encontrado, intentando usar...")
+                try:
+                    await self.client.connect()
+                    if await self.client.is_user_authorized():
+                        print("✅ Sesión válida encontrada")
+                        return True
+                    else:
+                        print("⚠️ Sesión inválida, eliminando...")
+                        await self.cleanup_session()
+                except Exception as e:
+                    print(f"⚠️ Error con sesión existente: {e}")
+                    await self.cleanup_session()
+            
+            # Si no hay sesión válida, intentar crear una nueva
+            print("🔄 Creando nueva sesión...")
+            
+            # En Railway, no podemos leer stdin, así que usamos un método alternativo
+            try:
+                # Intentar conectar sin verificación manual
+                await self.client.start(phone=PHONE_NUMBER, code_callback=self.code_callback)
+                return True
+            except Exception as e:
+                if "EOF when reading a line" in str(e) or "code_callback" in str(e):
+                    print("❌ Error: Railway no puede manejar verificación manual")
+                    print("💡 Solución: Necesitas generar la sesión localmente primero")
+                    return False
+                else:
+                    print(f"❌ Error de conexión: {e}")
+                    return False
+                    
         except Exception as e:
             if "database is locked" in str(e):
                 print("⚠️ Error de base de datos bloqueada, limpiando...")
@@ -46,7 +77,7 @@ class RailwayUserBot:
                 # Intentar nuevamente
                 try:
                     self.client = TelegramClient(SESSION_NAME, API_ID, API_HASH)
-                    await self.client.start(phone=PHONE_NUMBER)
+                    await self.client.start(phone=PHONE_NUMBER, code_callback=self.code_callback)
                     return True
                 except Exception as e2:
                     print(f"❌ Error en segundo intento: {e2}")
@@ -54,6 +85,11 @@ class RailwayUserBot:
             else:
                 print(f"❌ Error de conexión: {e}")
                 return False
+    
+    def code_callback(self):
+        """Callback para código de verificación (no usado en Railway)"""
+        print("❌ Error: Railway no puede manejar verificación manual")
+        return None
     
     async def run_userbot(self):
         """Ejecuta el userbot principal"""
@@ -75,7 +111,11 @@ class RailwayUserBot:
                 # Conectar a Telegram
                 if not await self.connect_telegram():
                     print("❌ No se pudo conectar a Telegram")
-                    await asyncio.sleep(30)  # Esperar 30 segundos
+                    print("💡 Instrucciones para solucionar:")
+                    print("1. Ejecuta localmente: python generate_session.py")
+                    print("2. Copia el archivo .session a Railway")
+                    print("3. O usa el método de sesión string")
+                    await asyncio.sleep(60)  # Esperar 1 minuto
                     continue
                 
                 # Verificar autorización

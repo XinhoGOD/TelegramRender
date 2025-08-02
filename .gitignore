@@ -46,7 +46,10 @@ venv.bak/
 .DS_Store
 Thumbs.db
 
-# NOTA: Se han removido las siguientes líneas para permitir subir archivos protegidos:
-# *.session
-# *.session-journal
-# .env 
+# Archivos de sesión de Telegram (excepto Railway)
+*.session
+*.session-journal
+# PERMITIR: railway_userbot_session.session
+
+# Variables de entorno
+.env 
