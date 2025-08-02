@@ -1,0 +1,5 @@
+# Configuración de Telegram API
+# Obtén estos valores en https://my.telegram.org/apps
+API_ID=tu_api_id_aqui
+API_HASH=tu_api_hash_aqui
+PHONE_NUMBER=+34612345678 
