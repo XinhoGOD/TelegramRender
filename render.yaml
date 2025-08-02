@@ -1,9 +1,9 @@
 services:
   - type: web
-    name: telegram-userbot
+    name: telegram-userbot-web
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: echo "Este es un userbot de Telegram que debe ejecutarse localmente"
+    startCommand: python render_web_service.py
     plan: free
     envVars:
       - key: PYTHON_VERSION
