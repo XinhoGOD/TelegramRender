@@ -7,6 +7,22 @@ import os
 import sys
 import subprocess
 import time
+from dotenv import load_dotenv
+
+def load_environment():
+    """Carga las variables de entorno"""
+    print("🔧 Cargando variables de entorno...")
+    
+    # Cargar archivo .env si existe
+    if os.path.exists('.env'):
+        print("✅ Archivo .env encontrado, cargando...")
+        load_dotenv()
+    else:
+        print("⚠️ Archivo .env no encontrado, usando variables del sistema")
+    
+    # Debuggear variables
+    from debug_env import debug_environment
+    debug_environment()
 
 def check_environment():
     """Verifica las variables de entorno"""
@@ -16,8 +32,11 @@ def check_environment():
     missing_vars = []
     
     for var in required_vars:
-        if not os.getenv(var):
+        value = os.getenv(var)
+        if not value:
             missing_vars.append(var)
+        else:
+            print(f"✅ {var}: Configurada")
     
     if missing_vars:
         print(f"❌ Variables faltantes: {', '.join(missing_vars)}")
@@ -26,7 +45,7 @@ def check_environment():
             print(f"   - {var}")
         return False
     
-    print("✅ Variables de entorno configuradas")
+    print("✅ Todas las variables de entorno configuradas")
     return True
 
 def main():
@@ -37,9 +56,16 @@ def main():
     # Verificar Python
     print(f"🐍 Python: {sys.version}")
     
+    # Cargar entorno
+    load_environment()
+    
     # Verificar entorno
     if not check_environment():
         print("❌ Error en la configuración")
+        print("💡 Asegúrate de configurar las variables en Railway:")
+        print("   - Ve a tu proyecto en Railway")
+        print("   - Ve a la pestaña 'Variables'")
+        print("   - Agrega: API_ID, API_HASH, PHONE_NUMBER")
         sys.exit(1)
     
     # Importar y ejecutar el userbot
