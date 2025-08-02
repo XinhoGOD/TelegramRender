@@ -31,7 +31,7 @@ class RenderUserBot:
         self.connection_attempts = 0
         
     async def connect_telegram(self):
-        """Conecta a Telegram"""
+        """Conecta a Telegram con timeout"""
         global connection_status, user_info
         self.connection_attempts += 1
         print(f"📡 Intento {self.connection_attempts}: Conectando a Telegram...")
@@ -47,7 +47,8 @@ class RenderUserBot:
                 return False
             
             print("📡 Estableciendo conexión...")
-            await self.client.connect()
+            # Agregar timeout para evitar que se cuelgue
+            await asyncio.wait_for(self.client.connect(), timeout=30.0)
             
             print("🔐 Verificando autorización...")
             if await self.client.is_user_authorized():
@@ -66,6 +67,10 @@ class RenderUserBot:
                 connection_status = "Error: Sesión no autorizada"
                 return False
                     
+        except asyncio.TimeoutError:
+            print("⏰ Timeout: La conexión tardó demasiado")
+            connection_status = "Error: Timeout de conexión"
+            return False
         except Exception as e:
             print(f"❌ Error de conexión: {e}")
             connection_status = f"Error: {str(e)}"
